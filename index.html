@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0e12;
+    --surface: #13151c;
+    --border: #1e2130;
+    --border2: #2a2e42;
+    --text: #c8cde0;
+    --muted: #4a5070;
+    --accent: #7c6aff;
+    --accent2: #00e5a0;
+    --danger: #ff4f6e;
+    --warn: #ffb347;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #fff;
+  }
+  .logo span { color: var(--accent); }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ── Type selector ── */
+  .type-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .type-tab {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .type-tab:hover { color: var(--text); border-color: var(--accent); }
+  .type-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* ── Main layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Editor panel ── */
+  .editor-panel {
+    width: 42%;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+  }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-purple { background: var(--accent); }
+  .dot-green { background: var(--accent2); }
+  .dot-red { background: var(--danger); }
+
+  .detected-label {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .detected-type {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+  }
+  .type-html { background: #1a2a1a; color: var(--accent2); border: 1px solid #1e4a2a; }
+  .type-react { background: #1a1a2e; color: #61dafb; border: 1px solid #1a2a4a; }
+  .type-mermaid { background: #2a1a1a; color: var(--warn); border: 1px solid #4a2a1a; }
+  .type-unknown { background: #1e2130; color: var(--muted); border: 1px solid var(--border2); }
+
+  #code-input {
+    flex: 1;
+    background: var(--bg);
+    color: var(--text);
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    padding: 16px;
+    tab-size: 2;
+    overflow-y: auto;
+  }
+  #code-input::placeholder { color: var(--muted); }
+  #code-input::-webkit-scrollbar { width: 6px; }
+  #code-input::-webkit-scrollbar-track { background: transparent; }
+  #code-input::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  .editor-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .btn-run {
+    flex: 1;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-run:hover { background: #9480ff; transform: translateY(-1px); }
+  .btn-run:active { transform: translateY(0); }
+
+  .btn-clear {
+    padding: 8px 12px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-clear:hover { color: var(--danger); border-color: var(--danger); }
+
+  /* ── Preview panel ── */
+  .preview-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .preview-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .traffic-lights { display: flex; gap: 5px; }
+  .tl { width: 10px; height: 10px; border-radius: 50%; }
+  .tl-r { background: #ff5f57; }
+  .tl-y { background: #febc2e; }
+  .tl-g { background: #28c840; }
+
+  .preview-url {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .btn-reload {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-reload:hover { color: var(--accent2); border-color: var(--accent2); }
+
+  #preview-frame {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #fff;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--muted);
+  }
+  .empty-icon {
+    font-size: 48px;
+    opacity: 0.3;
+  }
+  .empty-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--border2);
+  }
+  .empty-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  /* ── Status bar ── */
+  .statusbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 5px 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .status-item { display: flex; align-items: center; gap: 4px; }
+  .status-ok { color: var(--accent2); }
+  .status-warn { color: var(--warn); }
+  .status-err { color: var(--danger); }
+
+  /* ── Resizer ── */
+  .resizer {
+    width: 4px;
+    background: var(--border);
+    cursor: col-resize;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .resizer:hover { background: var(--accent); }
+
+  /* scrollbar global */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CLAUDE <span>▶</span> PLAYGROUND</div>
+  <div class="badge">LOCAL RUNTIME</div>
+  <div class="header-right">
+    <div class="type-tabs">
+      <button class="type-tab active" data-type="auto">AUTO</button>
+      <button class="type-tab" data-type="html">HTML</button>
+      <button class="type-tab" data-type="react">REACT</button>
+      <button class="type-tab" data-type="mermaid">MERMAID</button>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Editor -->
+  <div class="editor-panel" id="editor-panel">
+    <div class="panel-header">
+      <div class="dot dot-purple"></div>
+      CODE INPUT
+      <div class="detected-label">
+        <span style="color:var(--muted)">検出:</span>
+        <span class="detected-type type-unknown" id="detected-type-badge">UNKNOWN</span>
+      </div>
+    </div>
+    <textarea id="code-input" placeholder="Claudeのアーティファクトコードをここにペースト&#10;&#10;対応形式:&#10;• HTML / CSS / JS&#10;• React (JSX)&#10;• Mermaid図"></textarea>
+    <div class="editor-footer">
+      <button class="btn-run" onclick="runCode()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        実行
+      </button>
+      <button class="btn-clear" onclick="clearAll()">CLR</button>
+    </div>
+  </div>
+
+  <div class="resizer" id="resizer"></div>
+
+  <!-- Preview -->
+  <div class="preview-panel">
+    <div class="preview-toolbar">
+      <div class="traffic-lights">
+        <div class="tl tl-r"></div>
+        <div class="tl tl-y"></div>
+        <div class="tl tl-g"></div>
+      </div>
+      <div class="preview-url">claude-playground://sandbox</div>
+      <button class="btn-reload" onclick="runCode()" title="再実行">↺</button>
+    </div>
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">⬡</div>
+      <div class="empty-title">PREVIEW READY</div>
+      <div class="empty-sub">コードをペーストして<br>実行ボタンを押すと<br>ここにレンダリングされます</div>
+    </div>
+    <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" style="display:none"></iframe>
+  </div>
+</div>
+
+<div class="statusbar">
+  <div class="status-item">
+    <div class="dot" style="width:5px;height:5px;background:var(--accent2)"></div>
+    <span class="status-ok">READY</span>
+  </div>
+  <div class="status-item" id="status-type">TYPE: —</div>
+  <div class="status-item" id="status-lines">LINES: 0</div>
+  <div class="status-item" id="status-msg"></div>
+</div>
+
+<script>
+// ── ライブラリURL定義 ──
+const LIBS = {
+  react:    'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js',
+  reactdom: 'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js',
+  babel:    'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js',
+  tailwind: 'https://cdn.tailwindcss.com',
+  recharts: 'https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.min.js',
+  d3:       'https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js',
+  lucide:   'https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/umd/lucide.min.js',
+  mermaid:  'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js',
+  mathjs:   'https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js',
+  lodash:   'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js',
+};
+
+// ── 状態 ──
+let currentMode = 'auto';
+const codeInput = document.getElementById('code-input');
+const frame = document.getElementById('preview-frame');
+const emptyState = document.getElementById('empty-state');
+const detectedBadge = document.getElementById('detected-type-badge');
+const statusType = document.getElementById('status-type');
+const statusLines = document.getElementById('status-lines');
+const statusMsg = document.getElementById('status-msg');
+
+// ── タブ切替 ──
+document.querySelectorAll('.type-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentMode = tab.dataset.type;
+    updateDetectedBadge(detectType(codeInput.value));
+  });
+});
+
+// ── コード入力監視 ──
+codeInput.addEventListener('input', () => {
+  const code = codeInput.value;
+  statusLines.textContent = `LINES: ${code.split('\n').length}`;
+  const detected = detectType(code);
+  updateDetectedBadge(detected);
+});
+
+// ── 種別検出 ──
+function detectType(code) {
+  if (currentMode !== 'auto') return currentMode;
+  if (!code.trim()) return 'unknown';
+  if (/graph\s+(TD|LR|TB|RL|BT)|sequenceDiagram|classDiagram|flowchart/i.test(code)) return 'mermaid';
+  if (/import\s+.*from\s+['"]react|import\s+\{.*\}\s+from\s+['"]react|useState|useEffect|jsx|<[A-Z][a-zA-Z]+\s*[/>]/.test(code)) return 'react';
+  if (/<\s*html|<\s*head|<\s*body|<\s*div|<\s*script|<\s*style/i.test(code)) return 'html';
+  if (/const\s+\w+\s*=\s*\(|function\s+\w+\s*\(|=>/.test(code)) return 'react';
+  return 'unknown';
+}
+
+function updateDetectedBadge(type) {
+  const map = {
+    html: { label: 'HTML', cls: 'type-html' },
+    react: { label: 'REACT', cls: 'type-react' },
+    mermaid: { label: 'MERMAID', cls: 'type-mermaid' },
+    unknown: { label: 'UNKNOWN', cls: 'type-unknown' },
+  };
+  const info = map[type] || map.unknown;
+  detectedBadge.textContent = info.label;
+  detectedBadge.className = `detected-type ${info.cls}`;
+  statusType.textContent = `TYPE: ${info.label}`;
+}
+
+// ── メイン実行 ──
+function runCode() {
+  const code = codeInput.value.trim();
+  if (!code) return;
+
+  const type = detectType(code);
+  updateDetectedBadge(type);
+  setStatus('RUNNING…', 'warn');
+
+  let html = '';
+  if (type === 'react') html = buildReactTemplate(code);
+  else if (type === 'mermaid') html = buildMermaidTemplate(code);
+  else html = buildHtmlTemplate(code);
+
+  emptyState.style.display = 'none';
+  frame.style.display = 'block';
+  frame.srcdoc = html;
+
+  frame.onload = () => setStatus('OK', 'ok');
+  setTimeout(() => setStatus('OK', 'ok'), 2000);
+}
+
+function clearAll() {
+  codeInput.value = '';
+  frame.srcdoc = '';
+  frame.style.display = 'none';
+  emptyState.style.display = 'flex';
+  statusLines.textContent = 'LINES: 0';
+  statusType.textContent = 'TYPE: —';
+  statusMsg.textContent = '';
+  updateDetectedBadge('unknown');
+}
+
+function setStatus(msg, level) {
+  statusMsg.textContent = msg;
+  statusMsg.className = level === 'ok' ? 'status-item status-ok'
+                      : level === 'warn' ? 'status-item status-warn'
+                      : 'status-item status-err';
+}
+
+// ── HTMLテンプレート ──
+function buildHtmlTemplate(code) {
+  // すでに完全なHTMLなら注入だけ
+  if (/<\s*html/i.test(code)) {
+    // Tailwind / storageポリフィルを注入
+    return code.replace('</head>', `
+<script src="${LIBS.tailwind}"><\/script>
+<script>${storagePolyfill()}<\/script>
+</head>`).replace('</body>', `
+</body>`);
+  }
+  // 部分HTMLをラップ
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="${LIBS.tailwind}"><\/script>
+<script>${storagePolyfill()}<\/script>
+<style>body{margin:0;font-family:sans-serif;}</style>
+</head>
+<body>
+${code}
+</body>
+</html>`;
+}
+
+// ── Reactテンプレート ──
+function buildReactTemplate(code) {
+  // import文を取り除く（CDN版では不要）
+  const stripped = code
+    .replace(/^import\s+.*?from\s+['"][^'"]+['"];?\s*/gm, '')
+    .replace(/^export\s+default\s+/m, '')
+    .trim();
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="${LIBS.react}"><\/script>
+<script src="${LIBS.reactdom}"><\/script>
+<script src="${LIBS.babel}"><\/script>
+<script src="${LIBS.tailwind}"><\/script>
+<script src="${LIBS.d3}"><\/script>
+<script src="${LIBS.recharts}"><\/script>
+<script src="${LIBS.lucide}"><\/script>
+<script src="${LIBS.mathjs}"><\/script>
+<script src="${LIBS.lodash}"><\/script>
+<script>${storagePolyfill()}<\/script>
+<style>
+  body { margin: 0; font-family: sans-serif; }
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react,env">
+// --- Recharts shim ---
+const {
+  LineChart, BarChart, PieChart, AreaChart, RadarChart, ScatterChart,
+  ComposedChart, Line, Bar, Pie, Area, Radar, Scatter,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  Cell, ReferenceLine, RadialBarChart, RadialBar
+} = Recharts || {};
+
+// --- Lucide shim ---
+const lucideIcons = window.lucide || {};
+
+// --- hooks ---
+const { useState, useEffect, useRef, useCallback, useMemo, useReducer, useContext, createContext } = React;
+
+${stripped}
+
+// --- mount ---
+(function() {
+  const root = document.getElementById('root');
+  const rootInstance = ReactDOM.createRoot(root);
+
+  // コンポーネント名を推定してマウント
+  const exportMatch = ${JSON.stringify(code)}.match(/export\\s+default\\s+(\\w+)/);
+  const funcMatch = ${JSON.stringify(code)}.match(/(?:function|const)\\s+(App|Main|Home|Index|Component|\\w+)\\s*[=(]/);
+  
+  let CompName = exportMatch?.[1] || funcMatch?.[1];
+  
+  // グローバルから取得試行
+  let Comp = CompName ? window[CompName] : null;
+  
+  if (!Comp) {
+    // eval環境から最後の関数を探す
+    const names = ['App', 'Main', 'Home', 'Component', 'Index', CompName].filter(Boolean);
+    for (const n of names) {
+      try { if (typeof eval(n) === 'function') { Comp = eval(n); break; } } catch(e) {}
+    }
+  }
+  
+  if (Comp) {
+    rootInstance.render(React.createElement(Comp));
+  } else {
+    root.innerHTML = '<div style="padding:24px;color:#666;font-family:monospace">コンポーネントが見つかりませんでした。<br>コンポーネント名が App, Main 等でない場合は、コードを確認してください。</div>';
+  }
+})();
+<\/script>
+</body>
+</html>`;
+}
+
+// ── Mermaidテンプレート ──
+function buildMermaidTemplate(code) {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="${LIBS.mermaid}"><\/script>
+<style>
+  body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #fafafa; }
+  .mermaid { max-width: 90%; }
+</style>
+</head>
+<body>
+<div class="mermaid">
+${code}
+</div>
+<script>
+mermaid.initialize({ startOnLoad: true, theme: 'default' });
+<\/script>
+</body>
+</html>`;
+}
+
+// ── window.storage ポリフィル ──
+function storagePolyfill() {
+  return `
+window.storage = (function() {
+  const store = {};
+  const shared = {};
+  return {
+    get: async (key, isShared) => {
+      const s = isShared ? shared : store;
+      if (key in s) return { key, value: s[key], shared: !!isShared };
+      throw new Error('Key not found: ' + key);
+    },
+    set: async (key, value, isShared) => {
+      const s = isShared ? shared : store;
+      s[key] = typeof value === 'string' ? value : JSON.stringify(value);
+      return { key, value: s[key], shared: !!isShared };
+    },
+    delete: async (key, isShared) => {
+      const s = isShared ? shared : store;
+      delete s[key];
+      return { key, deleted: true, shared: !!isShared };
+    },
+    list: async (prefix, isShared) => {
+      const s = isShared ? shared : store;
+      const keys = Object.keys(s).filter(k => !prefix || k.startsWith(prefix));
+      return { keys, prefix, shared: !!isShared };
+    }
+  };
+})();
+`;
+}
+
+// ── Resizer ──
+const resizer = document.getElementById('resizer');
+const editorPanel = document.getElementById('editor-panel');
+let isResizing = false, startX = 0, startW = 0;
+
+resizer.addEventListener('mousedown', e => {
+  isResizing = true;
+  startX = e.clientX;
+  startW = editorPanel.offsetWidth;
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (!isResizing) return;
+  const w = Math.max(220, Math.min(startW + (e.clientX - startX), window.innerWidth - 300));
+  editorPanel.style.width = w + 'px';
+});
+document.addEventListener('mouseup', () => {
+  isResizing = false;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+});
+
+// ── Ctrl+Enter で実行 ──
+codeInput.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
+});
+
+// ── Tab キー ──
+codeInput.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = codeInput.selectionStart, end = codeInput.selectionEnd;
+    codeInput.value = codeInput.value.substring(0, s) + '  ' + codeInput.value.substring(end);
+    codeInput.selectionStart = codeInput.selectionEnd = s + 2;
+  }
+});
+</script>
+</body>
+</html>
