@@ -369,6 +369,7 @@
       </div>
       <div class="preview-url">claude-playground://sandbox</div>
       <button class="btn-reload" onclick="runCode()" title="再実行">↺</button>
+      <button class="btn-reload" onclick="openInNewTab()" title="別タブで全画面表示">⤢</button>
     </div>
     <div id="empty-state" class="empty-state">
       <div class="empty-icon">⬡</div>
@@ -457,6 +458,8 @@ function updateDetectedBadge(type) {
 }
 
 // ── メイン実行 ──
+let lastBuiltHtml = '';
+
 function runCode() {
   const code = codeInput.value.trim();
   if (!code) return;
@@ -470,12 +473,21 @@ function runCode() {
   else if (type === 'mermaid') html = buildMermaidTemplate(code);
   else html = buildHtmlTemplate(code);
 
+  lastBuiltHtml = html;
+
   emptyState.style.display = 'none';
   frame.style.display = 'block';
   frame.srcdoc = html;
 
   frame.onload = () => setStatus('OK', 'ok');
   setTimeout(() => setStatus('OK', 'ok'), 2000);
+}
+
+function openInNewTab() {
+  if (!lastBuiltHtml) { alert('先にコードを実行してください'); return; }
+  const blob = new Blob([lastBuiltHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
 }
 
 function clearAll() {
