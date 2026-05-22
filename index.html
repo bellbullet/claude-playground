@@ -537,11 +537,22 @@ ${code}
 
 // ── Reactテンプレート ──
 function buildReactTemplate(code) {
-  // import文を取り除く（CDN版では不要）
-  const stripped = code
+  // import文を除去
+  let stripped = code
     .replace(/^import\s+.*?from\s+['"][^'"]+['"];?\s*/gm, '')
-    .replace(/^export\s+default\s+/m, '')
     .trim();
+
+  // export default function App → function App に変換
+  // export default function → function __DefaultComp
+  stripped = stripped
+    .replace(/^export\s+default\s+function\s+(\w+)/m, 'function $1')
+    .replace(/^export\s+default\s+function\b/m, 'function __DefaultComp')
+    .replace(/^export\s+default\s+class\s+(\w+)/m, 'class $1')
+    .replace(/^export\s+default\s+(\w+)/m, '/* export default $1 */');
+
+  // export default されたコンポーネント名を抽出
+  const exportDefaultName = code.match(/export\s+default\s+(?:function\s+|class\s+)?(\w+)/)?.[1]
+    || '__DefaultComp';
 
   return `<!DOCTYPE html>
 <html>
@@ -572,7 +583,7 @@ const {
   ComposedChart, Line, Bar, Pie, Area, Radar, Scatter,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   Cell, ReferenceLine, RadialBarChart, RadialBar
-} = Recharts || {};
+} = (typeof Recharts !== 'undefined' ? Recharts : {});
 
 // --- Lucide shim ---
 const lucideIcons = window.lucide || {};
@@ -583,33 +594,9 @@ const { useState, useEffect, useRef, useCallback, useMemo, useReducer, useContex
 ${stripped}
 
 // --- mount ---
-(function() {
-  const root = document.getElementById('root');
-  const rootInstance = ReactDOM.createRoot(root);
-
-  // コンポーネント名を推定してマウント
-  const exportMatch = ${JSON.stringify(code)}.match(/export\\s+default\\s+(\\w+)/);
-  const funcMatch = ${JSON.stringify(code)}.match(/(?:function|const)\\s+(App|Main|Home|Index|Component|\\w+)\\s*[=(]/);
-  
-  let CompName = exportMatch?.[1] || funcMatch?.[1];
-  
-  // グローバルから取得試行
-  let Comp = CompName ? window[CompName] : null;
-  
-  if (!Comp) {
-    // eval環境から最後の関数を探す
-    const names = ['App', 'Main', 'Home', 'Component', 'Index', CompName].filter(Boolean);
-    for (const n of names) {
-      try { if (typeof eval(n) === 'function') { Comp = eval(n); break; } } catch(e) {}
-    }
-  }
-  
-  if (Comp) {
-    rootInstance.render(React.createElement(Comp));
-  } else {
-    root.innerHTML = '<div style="padding:24px;color:#666;font-family:monospace">コンポーネントが見つかりませんでした。<br>コンポーネント名が App, Main 等でない場合は、コードを確認してください。</div>';
-  }
-})();
+ReactDOM.createRoot(document.getElementById('root')).render(
+  React.createElement(typeof ${exportDefaultName} !== 'undefined' ? ${exportDefaultName} : (() => React.createElement('div', {style:{padding:24,color:'#666',fontFamily:'monospace'}}, 'コンポーネントが見つかりませんでした: ${exportDefaultName}')))
+);
 <\/script>
 </body>
 </html>`;
