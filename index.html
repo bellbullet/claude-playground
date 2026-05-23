@@ -319,6 +319,55 @@
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  /* ── Library drawer ── */
+  .lib-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55); z-index: 200;
+    backdrop-filter: blur(3px);
+  }
+  .lib-overlay.open { display: block; }
+  .lib-drawer {
+    position: fixed; top: 0; right: -380px;
+    width: 360px; height: 100%;
+    background: var(--surface);
+    border-left: 1px solid var(--border2);
+    display: flex; flex-direction: column;
+    z-index: 201;
+    transition: right 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+  .lib-drawer.open { right: 0; }
+  .lib-header { display: flex; align-items: center; gap: 10px; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .lib-title { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; color: #fff; flex: 1; }
+  .lib-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color 0.15s; }
+  .lib-close:hover { color: var(--danger); }
+  .lib-save-row { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .lib-name-input { flex: 1; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 7px 10px; color: var(--text); font-family: var(--sans); font-size: 12px; outline: none; transition: border-color 0.15s; }
+  .lib-name-input:focus { border-color: var(--accent); }
+  .lib-name-input::placeholder { color: var(--muted); }
+  .btn-save { padding: 7px 14px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-family: var(--sans); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+  .btn-save:hover { background: #9480ff; }
+  .lib-search { padding: 10px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .lib-search input { width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; color: var(--text); font-family: var(--mono); font-size: 11px; outline: none; box-sizing: border-box; }
+  .lib-search input::placeholder { color: var(--muted); }
+  .lib-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .lib-empty { padding: 40px 20px; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 11px; line-height: 1.8; }
+  .lib-item { display: flex; align-items: center; padding: 0 10px; margin: 2px 8px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; transition: all 0.12s; }
+  .lib-item:hover { background: rgba(124,106,255,0.08); border-color: var(--border2); }
+  .lib-item-body { flex: 1; padding: 10px 6px; min-width: 0; }
+  .lib-item-name { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+  .lib-item-meta { display: flex; gap: 8px; align-items: center; }
+  .lib-item-type { font-family: var(--mono); font-size: 9px; padding: 1px 6px; border-radius: 3px; letter-spacing: 0.05em; }
+  .lib-item-date { font-family: var(--mono); font-size: 9px; color: var(--muted); }
+  .lib-item-lines { font-family: var(--mono); font-size: 9px; color: var(--muted); }
+  .lib-item-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+  .lib-item:hover .lib-item-actions { opacity: 1; }
+  .lib-btn-load { padding: 4px 10px; background: rgba(124,106,255,0.15); border: 1px solid rgba(124,106,255,0.3); border-radius: 5px; color: var(--accent); font-family: var(--mono); font-size: 10px; cursor: pointer; transition: all 0.12s; }
+  .lib-btn-load:hover { background: var(--accent); color: #fff; }
+  .lib-btn-del { padding: 4px 8px; background: transparent; border: 1px solid rgba(255,79,110,0.2); border-radius: 5px; color: var(--danger); font-size: 11px; cursor: pointer; transition: all 0.12s; }
+  .lib-btn-del:hover { background: rgba(255,79,110,0.15); }
+  .lib-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 10px; color: var(--muted); flex-shrink: 0; }
+  .btn-lib { padding: 4px 12px; background: transparent; border: 1px solid var(--border2); border-radius: 5px; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+  .btn-lib:hover { color: var(--accent); border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -334,6 +383,7 @@
       <button class="type-tab" data-type="mermaid">MERMAID</button>
     </div>
   </div>
+  <button class="btn-lib" onclick="openLibrary()">📁 ライブラリ</button>
 </header>
 
 <div class="main">
@@ -353,6 +403,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         実行
       </button>
+      <button class="btn-save" onclick="quickSave()" style="padding:8px 12px;font-size:12px;">保存</button>
       <button class="btn-clear" onclick="clearAll()">CLR</button>
     </div>
   </div>
@@ -377,6 +428,29 @@
       <div class="empty-sub">コードをペーストして<br>実行ボタンを押すと<br>ここにレンダリングされます</div>
     </div>
     <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" style="display:none"></iframe>
+  </div>
+</div>
+
+
+<!-- Library Overlay & Drawer -->
+<div class="lib-overlay" id="lib-overlay" onclick="closeLibrary()"></div>
+<div class="lib-drawer" id="lib-drawer">
+  <div class="lib-header">
+    <div class="dot dot-purple"></div>
+    <div class="lib-title">LIBRARY</div>
+    <button class="lib-close" onclick="closeLibrary()">✕</button>
+  </div>
+  <div class="lib-save-row">
+    <input class="lib-name-input" id="lib-name-input" placeholder="名前を入力して保存..." maxlength="40"/>
+    <button class="btn-save" onclick="saveToLibrary()">保存</button>
+  </div>
+  <div class="lib-search">
+    <input type="text" id="lib-search-input" placeholder="🔍 検索..." oninput="renderLibList()"/>
+  </div>
+  <div class="lib-list" id="lib-list"></div>
+  <div class="lib-footer">
+    <span id="lib-count">0 件保存済み</span>
+    <button class="btn-lib" onclick="exportLib()" style="font-size:10px;">エクスポート</button>
   </div>
 </div>
 
@@ -694,6 +768,139 @@ codeInput.addEventListener('keydown', e => {
     codeInput.selectionStart = codeInput.selectionEnd = s + 2;
   }
 });
+
+// ── Library ──
+const LIB_KEY = 'claude_playground_library';
+
+function loadLib() {
+  try { return JSON.parse(localStorage.getItem(LIB_KEY) || '[]'); } catch { return []; }
+}
+
+function saveLib(items) {
+  localStorage.setItem(LIB_KEY, JSON.stringify(items));
+}
+
+function openLibrary() {
+  document.getElementById('lib-overlay').classList.add('open');
+  document.getElementById('lib-drawer').classList.add('open');
+  // 現在のコード名をauto-fill
+  const code = codeInput.value.trim();
+  if (code) {
+    const type = detectType(code);
+    const lines = code.split('\n').length;
+    const auto = `${type.toUpperCase()} ${lines}行`;
+    const nameInput = document.getElementById('lib-name-input');
+    if (!nameInput.value) nameInput.placeholder = auto;
+  }
+  renderLibList();
+}
+
+function closeLibrary() {
+  document.getElementById('lib-overlay').classList.remove('open');
+  document.getElementById('lib-drawer').classList.remove('open');
+}
+
+function saveToLibrary() {
+  const code = codeInput.value.trim();
+  if (!code) { alert('コードがありません'); return; }
+  const nameInput = document.getElementById('lib-name-input');
+  const name = nameInput.value.trim() || nameInput.placeholder || '無題';
+  const type = detectType(code);
+  const items = loadLib();
+  items.unshift({
+    id: Date.now().toString(36),
+    name,
+    type,
+    code,
+    lines: code.split('\n').length,
+    savedAt: new Date().toISOString(),
+  });
+  saveLib(items);
+  nameInput.value = '';
+  renderLibList();
+  setStatus(`"${name}" を保存しました`, 'ok');
+}
+
+function quickSave() {
+  openLibrary();
+  setTimeout(() => document.getElementById('lib-name-input').focus(), 300);
+}
+
+function loadFromLibrary(id) {
+  const items = loadLib();
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  codeInput.value = item.code;
+  updateDetectedBadge(detectType(item.code));
+  statusLines.textContent = `LINES: ${item.code.split('\n').length}`;
+  closeLibrary();
+  runCode();
+  setStatus(`"${item.name}" を読み込みました`, 'ok');
+}
+
+function deleteFromLibrary(id) {
+  const items = loadLib().filter(i => i.id !== id);
+  saveLib(items);
+  renderLibList();
+}
+
+function renderLibList() {
+  const items = loadLib();
+  const q = (document.getElementById('lib-search-input')?.value || '').toLowerCase();
+  const filtered = q ? items.filter(i => i.name.toLowerCase().includes(q) || i.type.includes(q)) : items;
+
+  const el = document.getElementById('lib-list');
+  const countEl = document.getElementById('lib-count');
+  if (countEl) countEl.textContent = `${items.length} 件保存済み`;
+
+  if (!filtered.length) {
+    el.innerHTML = `<div class="lib-empty">${items.length === 0 ? 'まだ保存されていません<br>コードを貼り付けて<br>「保存」を押してください' : '一致するものがありません'}</div>`;
+    return;
+  }
+
+  const typeColorMap = {
+    html:    { cls: 'type-html',    label: 'HTML' },
+    react:   { cls: 'type-react',   label: 'REACT' },
+    mermaid: { cls: 'type-mermaid', label: 'MERMAID' },
+    unknown: { cls: 'type-unknown', label: '?' },
+  };
+
+  el.innerHTML = filtered.map(item => {
+    const tc = typeColorMap[item.type] || typeColorMap.unknown;
+    const date = new Date(item.savedAt);
+    const dateStr = `${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+    return `
+      <div class="lib-item">
+        <div class="lib-item-body" onclick="loadFromLibrary('${item.id}')">
+          <div class="lib-item-name">${escHtml(item.name)}</div>
+          <div class="lib-item-meta">
+            <span class="lib-item-type ${tc.cls}">${tc.label}</span>
+            <span class="lib-item-lines">${item.lines}行</span>
+            <span class="lib-item-date">${dateStr}</span>
+          </div>
+        </div>
+        <div class="lib-item-actions">
+          <button class="lib-btn-load" onclick="loadFromLibrary('${item.id}')">読込</button>
+          <button class="lib-btn-del" onclick="if(confirm('削除しますか？'))deleteFromLibrary('${item.id}')">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function exportLib() {
+  const items = loadLib();
+  if (!items.length) { alert('保存済みのコードがありません'); return; }
+  const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `claude-playground-library-${Date.now()}.json`;
+  a.click();
+}
+
 </script>
 </body>
 </html>
